@@ -1,0 +1,4 @@
+TradePulse/.vs
+**/obj
+**/bin
+**/.DS_Store

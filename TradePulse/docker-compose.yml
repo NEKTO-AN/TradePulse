@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  collector:
+    image: ${DOCKER_REGISTRY-}collector
+    build:
+      context: .
+      dockerfile: Collector/Dockerfile
