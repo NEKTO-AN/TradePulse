@@ -17,9 +17,12 @@ namespace Domain.Orderbook
 		}
 
 
+        public override string ToString() => JsonConvert.SerializeObject(this, Formatting.None);
+
+
         public class DataModel
         {
-            [JsonProperty("symbol")]
+            [JsonProperty("s")]
             public string Symbol { get; set; }
 
             [JsonProperty("b")]

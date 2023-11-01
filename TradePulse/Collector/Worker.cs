@@ -43,14 +43,6 @@ public class Worker : BackgroundService
 
     private Task MessageAsync(string value)
     {
-        OrderbookResponse? response = Newtonsoft.Json.JsonConvert.DeserializeObject<OrderbookResponse>(value);
-        if (response is null)
-        {
-            return Task.CompletedTask;
-        }
-
-        _logger.LogInformation(message: response.ToString());
-
         return _producer.ProduceAsync(_groupId, new Message<Null, string>
         {
             Value = value

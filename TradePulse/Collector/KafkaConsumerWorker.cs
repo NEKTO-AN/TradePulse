@@ -37,8 +37,11 @@ namespace Collector
                     continue;
 
                 OrderbookResponse? response = Newtonsoft.Json.JsonConvert.DeserializeObject<OrderbookResponse>(result.Message.Value);
+                if (response is null)
+                    continue;
 
                 //do some logic with it
+                _logger.LogInformation(response.ToString());
             }
         }, stoppingToken);
     }
