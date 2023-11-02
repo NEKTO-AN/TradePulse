@@ -8,7 +8,7 @@ namespace Domain.Orderbook
         public long Timestamp { get; set; }
 
         [JsonProperty("data")]
-        public DataModel Data { get; set; }
+        public DataModel? Data { get; set; }
 
         public OrderbookResponse(long timestamp, DataModel data)
 		{

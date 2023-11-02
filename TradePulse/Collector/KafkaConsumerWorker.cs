@@ -5,20 +5,21 @@ namespace Collector
 {
     public class KafkaConsumerWorker : BackgroundService
     {
-        private const string _groupId = "demo-topic";
+        private readonly string _topic;
         private readonly ILogger<KafkaConsumerWorker> _logger;
         private readonly IConsumer<Null, string> _consumer;
         private readonly IOrderbookRepository _orderbookRepository;
 
-        public KafkaConsumerWorker(ILogger<KafkaConsumerWorker> logger, IOrderbookRepository orderbookRepository)
+        public KafkaConsumerWorker(ILogger<KafkaConsumerWorker> logger, IOrderbookRepository orderbookRepository, IConfiguration configuration)
         {
             _logger = logger;
             _orderbookRepository = orderbookRepository;
+            _topic = configuration["KAFKA_ORDERBOOK_TOPIC"] ?? throw new Exception();
 
             var config = new ConsumerConfig
             {
                 BootstrapServers = Environment.GetEnvironmentVariable("KAFKA_ENDPOINT") ?? throw new Exception(),
-                GroupId = _groupId + "group",
+                GroupId = _topic + "group",
                 AutoOffsetReset = AutoOffsetReset.Earliest
             };
 
@@ -27,7 +28,7 @@ namespace Collector
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken) => Task.Run(() =>
         {
-            _consumer.Subscribe(_groupId);
+            _consumer.Subscribe(_topic);
 
             while (!stoppingToken.IsCancellationRequested)
             {

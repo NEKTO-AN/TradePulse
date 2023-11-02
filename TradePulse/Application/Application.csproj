@@ -12,6 +12,7 @@
     <None Remove="Behaviors\Socket\" />
     <None Remove="Services\" />
     <None Remove="Services\Kafka\" />
+    <None Remove="Behaviors\Exchange\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Behaviors\" />
@@ -19,6 +20,7 @@
     <Folder Include="Behaviors\Socket\" />
     <Folder Include="Services\" />
     <Folder Include="Services\Kafka\" />
+    <Folder Include="Behaviors\Exchange\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Domain\Domain.csproj" />

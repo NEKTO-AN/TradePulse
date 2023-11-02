@@ -8,9 +8,11 @@
 
   <ItemGroup>
     <None Remove="Orderbook\" />
+    <None Remove="Exchange\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Orderbook\" />
+    <Folder Include="Exchange\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />

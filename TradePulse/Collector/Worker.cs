@@ -1,27 +1,24 @@
-﻿using System.Net.WebSockets;
-using Application.Behaviors.Socket;
+﻿using Application.Behaviors.Exchange;
 using Confluent.Kafka;
-using Domain.Orderbook;
 
 namespace Collector;
 
 public class Worker : BackgroundService
 {
-    private const string _symbol = "OPUSDT";
-    private const string _groupId = "demo-topic";
-
+    private readonly string _topic;
     private readonly ILogger<Worker> _logger;
-    private readonly ClientWebSocket ws = new();
-
     private readonly IProducer<Null, string> _producer;
+    private readonly ExchangeWebSocketBehavior _exchangeWebSocketBehavior;
 
-    public Worker(ILogger<Worker> logger)
+    public Worker(ExchangeWebSocketBehavior exchangeWebSocketBehavior, ILogger<Worker> logger, IConfiguration configuration)
     {
+        _exchangeWebSocketBehavior = exchangeWebSocketBehavior;
         _logger = logger;
+        _topic = configuration["KAFKA_ORDERBOOK_TOPIC"] ?? throw new Exception();
 
         ProducerConfig config = new()
         {
-            BootstrapServers = Environment.GetEnvironmentVariable("KAFKA_ENDPOINT") ?? throw new Exception()
+            BootstrapServers = configuration["KAFKA_ENDPOINT"] ?? throw new Exception()
         };
 
         _producer = new ProducerBuilder<Null, string>(config).Build();
@@ -29,21 +26,12 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        WebSocketBehavior webSocket = new(
-            handler: new WebSocketHandler(ws),
-            url: "wss://stream.bybit.com/v5/public/linear",
-            receiveBufferSize: 1024 * 32);
-
-        await webSocket.ConnectAsync(stoppingToken);
-        await webSocket.SendAsync("{\"op\":\"subscribe\",\"args\":[\"orderbook.500." + _symbol + "\"]}", stoppingToken);
-
-
-        webSocket.OnMessageReceived(MessageAsync, stoppingToken);
+        await _exchangeWebSocketBehavior.OrderbookAsync(new string[] { "orderbook.500.ETHUSDT", "orderbook.500.BTCUSDT" }, MessageAsync, stoppingToken);
     }
 
     private Task MessageAsync(string value)
     {
-        return _producer.ProduceAsync(_groupId, new Message<Null, string>
+        return _producer.ProduceAsync(_topic, new Message<Null, string>
         {
             Value = value
         });
