@@ -4,8 +4,7 @@
     <TargetFramework>net7.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>dotnet-Collector-e2e10da6-5cab-4bd0-8dca-a11dc1c46002</UserSecretsId>
-    <DockerComposeProjectPath>../docker-compose.dcproj</DockerComposeProjectPath>
+    <UserSecretsId>dotnet-OrderbookCollector-199c2d43-aeb2-4a56-a47a-6173f46758c8</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
