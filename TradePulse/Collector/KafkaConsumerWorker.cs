@@ -32,7 +32,7 @@ namespace Collector
 
             while (!stoppingToken.IsCancellationRequested)
             {
-                ConsumeResult<Null, string> result = _consumer.Consume(stoppingToken);
+                ConsumeResult<Null, string> result = _consumer.Consume();
                 if (result is null)
                     continue;
 
@@ -41,7 +41,7 @@ namespace Collector
                     continue;
 
                 //do some logic with it
-                _logger.LogInformation(response.ToString());
+                _logger.LogInformation(message: response.ToString());
 
                 _orderbookRepository.AddAsync(new Orderbook(
                     timestamp: response.Timestamp,

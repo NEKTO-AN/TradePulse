@@ -1,5 +1,6 @@
 ﻿using Domain.Orderbook;
 using MongoDB.Driver;
+using MongoDB.Driver.Linq;
 
 namespace Infrastructure.Repositories
 {
@@ -18,6 +19,12 @@ namespace Infrastructure.Repositories
         {
             await _collection.InsertOneAsync(entity);
         }
+
+        public Task<List<Orderbook>> GetAsync(string symbol, long fromTs, int count)
+            => _collection.AsQueryable()
+                .Where(x => x.Timestamp > fromTs)
+                .Take(count)
+                .ToListAsync();
     }
 }
 

@@ -5,6 +5,7 @@ namespace Collector;
 
 public class Worker : BackgroundService
 {
+    private readonly string[] topics = new string[] { "orderbook.500.ETHUSDT", "orderbook.500.BTCUSDT" };
     private readonly string _topic;
     private readonly ILogger<Worker> _logger;
     private readonly IProducer<Null, string> _producer;
@@ -24,16 +25,12 @@ public class Worker : BackgroundService
         _producer = new ProducerBuilder<Null, string>(config).Build();
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        await _exchangeWebSocketBehavior.OrderbookAsync(new string[] { "orderbook.500.ETHUSDT", "orderbook.500.BTCUSDT" }, MessageAsync, stoppingToken);
-    }
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+        => _exchangeWebSocketBehavior.OrderbookAsync(topics, MessageAsync, stoppingToken);
 
     private Task MessageAsync(string value)
-    {
-        return _producer.ProduceAsync(_topic, new Message<Null, string>
+        => _producer.ProduceAsync(_topic, new Message<Null, string>
         {
             Value = value
         });
-    }
 }
