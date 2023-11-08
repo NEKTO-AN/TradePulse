@@ -1,6 +1,7 @@
 version: '3.4'
 
 services:
+# APPLICATIONS
   dataconsumer:
     image: ${DOCKER_REGISTRY-}dataconsumer
     container_name: data-consumer
@@ -19,7 +20,15 @@ services:
     build:
       context: .
       dockerfile: OrderbookCollector/Dockerfile
-
+  api:
+    image: ${DOCKER_REGISTRY-}api
+    container_name: api
+    depends_on:
+      - mongo
+    env_file: .env
+    build:
+      context: .
+      dockerfile: API/Dockerfile
 
 # DB
   mongo:
@@ -173,3 +182,5 @@ services:
       KSQL_KSQL_LOGGING_PROCESSING_TOPIC_REPLICATION_FACTOR: 1
       KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: 'true'
       KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: 'true'
+
+

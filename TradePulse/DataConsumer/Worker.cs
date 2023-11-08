@@ -12,18 +12,18 @@ public class Worker : BackgroundService
 
     public Worker(ILogger<Worker> logger, IOrderbookRepository orderbookRepository, OrderbookCollectorConfiguration configuration)
     {
-            _logger = logger;
-            _orderbookRepository = orderbookRepository;
-            _topic = configuration.KafkaOrderbookTopic;
+        _logger = logger;
+        _orderbookRepository = orderbookRepository;
+        _topic = configuration.KafkaOrderbookTopic;
 
-            var config = new ConsumerConfig
-            {
-                BootstrapServers = configuration.KafkaEndpoint,
-                GroupId = _topic + "group",
-                AutoOffsetReset = AutoOffsetReset.Earliest
-            };
+        var config = new ConsumerConfig
+        {
+            BootstrapServers = configuration.KafkaEndpoint,
+            GroupId = _topic + "group",
+            AutoOffsetReset = AutoOffsetReset.Earliest
+        };
 
-            _consumer = new ConsumerBuilder<Null, string>(config).Build();
+        _consumer = new ConsumerBuilder<Null, string>(config).Build();
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken) => Task.Run(() =>
