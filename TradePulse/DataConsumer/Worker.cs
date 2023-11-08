@@ -1,3 +1,4 @@
+using Application.Services.DataConsumerService;
 using Confluent.Kafka;
 using Domain.Orderbook;
 using IoC.Configuration;
@@ -5,16 +6,16 @@ namespace DataConsumer;
 
 public class Worker : BackgroundService
 {
-        private readonly string _topic;
-        private readonly ILogger<Worker> _logger;
-        private readonly IConsumer<Null, string> _consumer;
-        private readonly IOrderbookRepository _orderbookRepository;
+    private readonly string _topic;
+    private readonly ILogger<Worker> _logger;
+    private readonly IConsumer<Null, string> _consumer;
+    private readonly DataConsumerWorkerService _dataConsumerWorkerService;
 
-    public Worker(ILogger<Worker> logger, IOrderbookRepository orderbookRepository, OrderbookCollectorConfiguration configuration)
+    public Worker(ILogger<Worker> logger, DataConsumerWorkerService dataConsumerWorkerService, OrderbookCollectorConfiguration configuration)
     {
         _logger = logger;
-        _orderbookRepository = orderbookRepository;
         _topic = configuration.KafkaOrderbookTopic;
+        _dataConsumerWorkerService = dataConsumerWorkerService;
 
         var config = new ConsumerConfig
         {
@@ -26,7 +27,7 @@ public class Worker : BackgroundService
         _consumer = new ConsumerBuilder<Null, string>(config).Build();
     }
 
-    protected override Task ExecuteAsync(CancellationToken stoppingToken) => Task.Run(() =>
+    protected override Task ExecuteAsync(CancellationToken stoppingToken) => Task.Run(async () =>
     {
         _consumer.Subscribe(_topic);
 
@@ -37,19 +38,12 @@ public class Worker : BackgroundService
                 continue;
 
             OrderbookResponse? response = Newtonsoft.Json.JsonConvert.DeserializeObject<OrderbookResponse>(result.Message.Value);
-            if (response is null || response.Data is null)
+            if (response is null || response.Data is null || (response.Data.Bids.Length < 1 && response.Data.Asks.Length < 1))
                 continue;
 
-            //do some logic with it
             _logger.LogInformation(message: response.ToString());
 
-            _orderbookRepository.AddAsync(new Orderbook(
-                timestamp: response.Timestamp,
-                symbol: response.Data.Symbol,
-                data: new(
-                    response.Data.Bids,
-                    response.Data.Asks,
-                    response.Data.CrossSequence)));
+            await _dataConsumerWorkerService.AddOrderbookItemAsync(new Orderbook(response.Timestamp, response.Data));
         }
     }, stoppingToken);
 }

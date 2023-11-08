@@ -1,4 +1,5 @@
 ﻿using Application.Behaviors.Exchange;
+using Application.Services.DataConsumerService;
 using Domain.Orderbook;
 using Infrastructure;
 using Infrastructure.Repositories;
@@ -15,6 +16,8 @@ namespace IoC
             services.AddSingleton<MongoDbContext>();
             services.AddSingleton<IOrderbookRepository, OrderbookRepository>();
             services.AddSingleton<ExchangeWebSocketBehavior>();
+
+            services.AddSingleton<DataConsumerWorkerService>();
 
             services.AddSingleton<OrderbookCollectorConfiguration>((provider) => new(provider.GetService<IConfiguration>() ?? throw new Exception()));
 
