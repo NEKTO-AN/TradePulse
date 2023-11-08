@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "Collector": {
+    "DataConsumer": {
       "commandName": "Project",
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development"

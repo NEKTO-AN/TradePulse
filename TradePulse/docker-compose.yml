@@ -1,21 +1,27 @@
 version: '3.4'
 
 services:
-  collector:
-    image: ${DOCKER_REGISTRY-}collector
-    container_name: app-collector
+  dataconsumer:
+    image: ${DOCKER_REGISTRY-}dataconsumer
+    container_name: data-consumer
     depends_on:
-      - control-center
-    environment:
-      KAFKA_ENDPOINT: 'broker:29092'
-      MONGODB_URI: 'mongodb://root:example@mongo:27017/'
-      BYBIT_SOCKET_URL_PUBLIC_LINEAR: 'wss://stream.bybit.com/v5/public/linear'
-      KAFKA_ORDERBOOK_TOPIC: 'orderbook-topic'
+      - orderbookcollector
+    env_file: .env
     build:
       context: .
-      dockerfile: Collector/Dockerfile
+      dockerfile: DataConsumer/Dockerfile
+  orderbookcollector:
+    image: ${DOCKER_REGISTRY-}orderbookcollector
+    container_name: orderbook-collector
+    depends_on:
+      - control-center
+    env_file: .env
+    build:
+      context: .
+      dockerfile: OrderbookCollector/Dockerfile
 
-#DB
+
+# DB
   mongo:
     image: mongo
     hostname: mongo
