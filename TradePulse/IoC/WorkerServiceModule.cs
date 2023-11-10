@@ -1,9 +1,9 @@
 ﻿using Application.Behaviors.Exchange;
+using Application.Helpers.Configuration;
 using Application.Services.DataConsumerService;
 using Domain.Orderbook;
 using Infrastructure;
 using Infrastructure.Repositories;
-using IoC.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,7 +19,7 @@ namespace IoC
 
             services.AddSingleton<DataConsumerWorkerService>();
 
-            services.AddSingleton<OrderbookCollectorConfiguration>((provider) => new(provider.GetService<IConfiguration>() ?? throw new Exception()));
+            services.AddSingleton<AppConfiguration>((provider) => new(provider.GetService<IConfiguration>() ?? throw new Exception()));
 
             return services;
         }
