@@ -4,7 +4,7 @@ namespace Application.Services.DataConsumerService
 {
     public class DataConsumerWorkerService
     {
-        private readonly PriceBinarySearchTree priceBinarySearchTree = new();
+        private readonly PriceBinarySearchTree priceBinarySearchTree = new(TimeSpan.FromHours(1));
 
         private readonly IOrderbookRepository _orderbookRepository;
 

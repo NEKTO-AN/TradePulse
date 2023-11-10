@@ -1,6 +1,6 @@
 namespace Application.Helpers.BST
 {
-    public abstract class Node<T>
+    public class Node<T>
     {
         public T Value { get; set; }
 
