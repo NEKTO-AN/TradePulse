@@ -2,14 +2,19 @@ using Application.Helpers.BST;
 
 namespace Application.Services.DataConsumerService
 {
-    public class PriceNode : Node<double>
+    public sealed class PriceNode : Node<double>
     {
-        public TimestampNode TimestampNode { get; set; }
+        public long LastUpdateTs { get; private set; }
 
-        public PriceNode(double value, TimestampNode ts) : base(value)
+        public PriceNode(double value, long lastUpdateTs) : base(value)
         {
             Value = value;
-            TimestampNode = ts;
+            LastUpdateTs = lastUpdateTs;
+        }
+
+        public void UpdateTimestamp(long ts)
+        {
+            LastUpdateTs = ts;
         }
     }
 }

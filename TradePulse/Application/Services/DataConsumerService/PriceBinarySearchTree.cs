@@ -23,19 +23,21 @@ namespace Application.Services.DataConsumerService
         public void Insert(double value, long timestamp)
         {
             _priceNode = InsertValue(_priceNode, value, timestamp);
+            timeframe.Enqueue((price: value, timestamp: timestamp));
 
             while (true)
             {
-                long? maxTs = GetMaxTimestamp(_priceNode.TimestampNode)?.Value;
-                long? minTs = GetMinTimestamp(_priceNode.TimestampNode)?.Value;
-                if (minTs == null || maxTs == null || (maxTs - minTs) < _nodeLifetime.TotalMilliseconds)
+                if (timeframe.Last().timestamp - timeframe.First().timestamp <= _nodeLifetime.TotalMilliseconds)
                 {
                     break;
                 }
 
-                bool result = RemoveTimestamp(minTs!.Value);
-                if (!result)
-                    break;
+                (double price, long timestamp) timeframeData = timeframe.Dequeue();
+                PriceNode? newNode = Remove(_priceNode, timeframeData.price, timeframeData.timestamp);
+                if (newNode == null)
+                    continue;
+
+                _priceNode = newNode;
             }
 
             MinPrice = GetMinPrice(_priceNode)?.Value ?? MinPrice;
@@ -46,43 +48,49 @@ namespace Application.Services.DataConsumerService
         {
             return (PriceNode?)Search(_priceNode, price);
         }
-        public TimestampNode? SearchTimestamp(long timestamp)
-        {
-            return (TimestampNode?)Search(_priceNode?.TimestampNode, timestamp);
-        }
-        public bool RemoveTimestamp(long timestamp)
-        {
-            TimestampNode? findNode = (TimestampNode?)Search(_priceNode?.TimestampNode, timestamp);
-            if (findNode is null)
-                return false;
-            else if (findNode.PriceNode is null)
-                throw new Exception();
-
-            PriceNode? priceNode = (PriceNode?)Remove(_priceNode, findNode.PriceNode.Value);
-            if (priceNode is null)
-                return false;
-
-            priceNode.TimestampNode = (TimestampNode?)Remove(priceNode.TimestampNode, timestamp) ?? throw new Exception();
-            _priceNode = priceNode;
-
-            return true;
-        }
+        
 
         private PriceNode InsertValue(PriceNode? node, double price, long timestamp)
         {
             if (node is null)
             {
-                return TimestampNode.Init(timestamp, price);
+                return new(price, timestamp);
             }
 
             if (price < node.Value)
             {
                 node.Left = InsertValue((PriceNode?)node.Left, price, timestamp);
             }
-
-            if (price > node.Value)
+            else if (price > node.Value)
             {
                 node.Right = InsertValue((PriceNode?)node.Right, price, timestamp);
+            }
+            else
+            {
+                node.UpdateTimestamp(timestamp);
+            }
+
+            return node;
+        }
+
+        private PriceNode InsertValue(PriceNode? node, PriceNode newNode)
+        {
+            if (node is null)
+            {
+                return newNode;
+            }
+
+            if (newNode.Value < node.Value)
+            {
+                node.Left = InsertValue((PriceNode?)node.Left, newNode);
+            }
+            else if (newNode.Value > node.Value)
+            {
+                node.Right = InsertValue((PriceNode?)node.Right, newNode);
+            }
+            else
+            {
+                node.UpdateTimestamp(newNode.LastUpdateTs);
             }
 
             return node;
@@ -105,8 +113,7 @@ namespace Application.Services.DataConsumerService
         }
 
 
-
-        private Node<T>? Remove<T>(Node<T>? node, T value) where T : struct, IComparable
+        private PriceNode? Remove(PriceNode? node, double value, long updateTime)
         {
             if (node is null)
             {
@@ -115,23 +122,38 @@ namespace Application.Services.DataConsumerService
 
             if (value.CompareTo(node.Value) < 0)
             {
-                node.Left = Remove(node.Left, value);
+                node.Left = Remove((PriceNode?)node.Left, value, updateTime);
                 return node;
             }
             else if (value.CompareTo(node.Value) > 0)
             {
-                node.Right = Remove(node.Right, value);
+                node.Right = Remove((PriceNode?)node.Right, value, updateTime);
                 return node;
             }
             else
             {
+                if (node.LastUpdateTs != updateTime)
+                {
+                    return node;
+                }
                 if (node.Left is not null)
                 {
-                    return node.Left.Right = node.Right;
+                    if (node.Right == null)
+                    {
+                        return (PriceNode?)node.Left;
+                    }
+                    else if (node.Left == null)
+                    {
+                        return (PriceNode?)node.Right;
+                    }
+                    else
+                    {
+                        return InsertValue((PriceNode?)node.Right, (PriceNode)node.Left);
+                    }
                 }
                 else
                 {
-                    return node.Right;
+                    return (PriceNode?)node.Right;
                 }
             }
         }
@@ -153,26 +175,6 @@ namespace Application.Services.DataConsumerService
             if (node?.Right is not null)
             {
                 return GetMaxPrice((PriceNode)node.Right);
-            }
-
-            return node;
-        }
-
-        private TimestampNode? GetMinTimestamp(TimestampNode? node)
-        {
-            if (node?.Left is not null)
-            {
-                return GetMinTimestamp((TimestampNode)node.Left);
-            }
-
-            return node;
-        }
-
-        private TimestampNode? GetMaxTimestamp(TimestampNode? node)
-        {
-            if (node?.Right is not null)
-            {
-                return GetMaxTimestamp((TimestampNode)node.Right);
             }
 
             return node;
