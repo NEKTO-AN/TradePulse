@@ -19,24 +19,24 @@ namespace Application.Test.Services
 
             Assert.Multiple(() =>
             {
-                Assert.That(priceBinarySearchTree.MaxPrice, Is.EqualTo(900));
-                Assert.That(priceBinarySearchTree.MinPrice, Is.EqualTo(34));
+                Assert.That(priceBinarySearchTree.MaxPrice.Value, Is.EqualTo(900));
+                Assert.That(priceBinarySearchTree.MinPrice.Value, Is.EqualTo(34));
             });
 
             priceBinarySearchTree.Insert(89, (long)TimeSpan.FromSeconds(9).TotalMilliseconds);
 
             Assert.Multiple(() =>
             {
-                Assert.That(priceBinarySearchTree.MaxPrice, Is.EqualTo(89));
-                Assert.That(priceBinarySearchTree.MinPrice, Is.EqualTo(34));
+                Assert.That(priceBinarySearchTree.MaxPrice.Value, Is.EqualTo(89));
+                Assert.That(priceBinarySearchTree.MinPrice.Value, Is.EqualTo(34));
             });
 
             priceBinarySearchTree.Insert(3, (long)TimeSpan.FromSeconds(11).TotalMilliseconds);
 
             Assert.Multiple(() =>
             {
-                Assert.That(priceBinarySearchTree.MaxPrice, Is.EqualTo(89));
-                Assert.That(priceBinarySearchTree.MinPrice, Is.EqualTo(3));
+                Assert.That(priceBinarySearchTree.MaxPrice.Value, Is.EqualTo(89));
+                Assert.That(priceBinarySearchTree.MinPrice.Value, Is.EqualTo(3));
             });
         }
 

@@ -1,17 +1,18 @@
+using Application.Helpers.Configuration;
+using Application.Helpers.Kafka;
 using Application.Services.DataConsumerService;
 using Confluent.Kafka;
 using Domain.Orderbook;
-using IoC.Configuration;
 namespace DataConsumer;
 
 public class Worker : BackgroundService
 {
     private readonly string _topic;
     private readonly ILogger<Worker> _logger;
-    private readonly IConsumer<Null, string> _consumer;
+    private readonly IConsumer<Null, OrderbookDataMessage> _consumer;
     private readonly DataConsumerWorkerService _dataConsumerWorkerService;
 
-    public Worker(ILogger<Worker> logger, DataConsumerWorkerService dataConsumerWorkerService, OrderbookCollectorConfiguration configuration)
+    public Worker(ILogger<Worker> logger, DataConsumerWorkerService dataConsumerWorkerService, AppConfiguration configuration)
     {
         _logger = logger;
         _topic = configuration.KafkaOrderbookTopic;
@@ -24,7 +25,8 @@ public class Worker : BackgroundService
             AutoOffsetReset = AutoOffsetReset.Earliest
         };
 
-        _consumer = new ConsumerBuilder<Null, string>(config).Build();
+        _consumer = new ConsumerBuilder<Null, OrderbookDataMessage>(config)
+            .SetValueDeserializer(new MessageSerializer<OrderbookDataMessage>()).Build();
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken) => Task.Run(async () =>
@@ -33,17 +35,19 @@ public class Worker : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            ConsumeResult<Null, string> result = _consumer.Consume(timeout: TimeSpan.FromMinutes(5));
-            if (result is null)
+            ConsumeResult<Null, OrderbookDataMessage> consumeResult = _consumer.Consume(timeout: TimeSpan.FromMinutes(5));
+            _logger.LogInformation(message: consumeResult.Message.Value.ToString());
+
+            if (consumeResult?.Message?.Value?.Data is null || (consumeResult.Message.Value.Data.Bids.Length < 1 && consumeResult.Message.Value.Data.Asks.Length < 1))
                 continue;
 
-            OrderbookResponse? response = Newtonsoft.Json.JsonConvert.DeserializeObject<OrderbookResponse>(result.Message.Value);
-            if (response is null || response.Data is null || (response.Data.Bids.Length < 1 && response.Data.Asks.Length < 1))
-                continue;
 
-            _logger.LogInformation(message: response.ToString());
 
-            await _dataConsumerWorkerService.AddOrderbookItemAsync(new Orderbook(response.Timestamp, response.Data));
+            await _dataConsumerWorkerService.AddOrderbookItemAsync(
+                lastPrice: consumeResult.Message.Value.LastPrice,
+                orderbook: new Orderbook(consumeResult.Message.Value.Timestamp, consumeResult.Message.Value.Data));
+
+            _consumer.Commit(consumeResult);
         }
     }, stoppingToken);
 }

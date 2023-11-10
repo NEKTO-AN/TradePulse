@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace Domain.Orderbook
+namespace Domain.Orderbook.Exchange.WebSocket
 {
     public class OrderbookResponse
     {

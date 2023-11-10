@@ -2,6 +2,7 @@
 using Application.Helpers.Configuration;
 using Application.Services.DataConsumerService;
 using Domain.Orderbook;
+using Domain.PumpDumpSnapshot;
 using Infrastructure;
 using Infrastructure.Repositories;
 using Microsoft.Extensions.Configuration;
@@ -15,6 +16,7 @@ namespace IoC
         {
             services.AddSingleton<MongoDbContext>();
             services.AddSingleton<IOrderbookRepository, OrderbookRepository>();
+            services.AddSingleton<IPumpDumpSnapshotRepository, PumpDumpSnapshotRepository>();
             services.AddSingleton<ExchangeWebSocketBehavior>();
 
             services.AddSingleton<DataConsumerWorkerService>();

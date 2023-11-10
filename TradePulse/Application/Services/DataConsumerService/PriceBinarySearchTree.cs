@@ -8,8 +8,8 @@ namespace Application.Services.DataConsumerService
         private readonly TimeSpan _nodeLifetime;
         private readonly Queue<(double price, long timestamp)> timeframe = new(100_000);
 
-        public double MinPrice { get; private set; }
-        public double MaxPrice { get; private set; }
+        public PriceNode MinPrice { get; private set; }
+        public PriceNode MaxPrice { get; private set; }
 
         /// <summary>
         /// 
@@ -18,6 +18,7 @@ namespace Application.Services.DataConsumerService
         public PriceBinarySearchTree(TimeSpan nodeLifetime)
         {
             _nodeLifetime = nodeLifetime;
+            MinPrice = MaxPrice = new(0, 0);
         }
 
         public void Insert(double value, long timestamp)
@@ -40,8 +41,8 @@ namespace Application.Services.DataConsumerService
                 _priceNode = newNode;
             }
 
-            MinPrice = GetMinPrice(_priceNode)?.Value ?? MinPrice;
-            MaxPrice = GetMaxPrice(_priceNode)?.Value ?? MaxPrice;
+            MinPrice = GetMinPrice(_priceNode) ?? MinPrice;
+            MaxPrice = GetMaxPrice(_priceNode) ?? MaxPrice;
         }
 
         public PriceNode? SearchPrice(double price)
