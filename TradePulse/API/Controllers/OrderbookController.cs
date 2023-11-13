@@ -1,4 +1,5 @@
 using Application.Orderbook.Read;
+using Application.PumpDumpSnapshot.Read;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,26 +16,22 @@ namespace API.Controllers
             _sender = sender;
         }
 
-
-        [HttpGet("ranges-collected-data")]
-        public async Task<IActionResult> GetRangesCollectedDataAsync(string symbol, int page)
-        {
-            return Ok();
-        }
-
         [HttpGet("data")]
-        public async Task<IActionResult> GetDataAsync(string symbol, long fromTs, long toTs)
+        public async Task<IActionResult> GetDataAsync(string symbol, long fromTs, int count)
         {
-            ReadOrderbookCommand command = new(symbol, fromTs, /*todo change it later*/ 50);
+            ReadOrderbookCommand command = new(symbol, fromTs, count);
             
             ReadOrderbookResponse response = await _sender.Send(command);
             return Ok(response);
         }
 
-        [HttpGet("ranges-collected-data")]
-        public async Task<IActionResult> GetAnomalyZonesAsync(string symbol, int page)
+        [HttpGet("anomaly-zones")]
+        public async Task<IActionResult> GetAnomalyZonesAsync(string symbol, long fromTs, int count)
         {
-            return Ok();
+            ReadPumpDumpSnapshotCommand command = new(symbol, fromTs, count);
+
+            ReadPumpDumpSnapshotResponse response = await _sender.Send(command);
+            return Ok(response);
         }
     }
 }

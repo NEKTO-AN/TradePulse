@@ -1,5 +1,6 @@
 using Domain.PumpDumpSnapshot;
 using MongoDB.Driver;
+using MongoDB.Driver.Linq;
 
 namespace Infrastructure.Repositories
 {
@@ -15,5 +16,13 @@ namespace Infrastructure.Repositories
 
         public Task AddAsync(PumpDumpSnapshot entity, CancellationToken cancellationToken = default) 
             => _collection.InsertOneAsync(entity, null, cancellationToken);
+
+        public Task<List<PumpDumpSnapshot>> GetAsync(string symbol, long fromTs, int count, CancellationToken cancellationToken = default)
+        {
+            return _collection.AsQueryable()
+                .Where(x => x.Symbol == symbol && x.Time.Min > fromTs)
+                .Take(count)
+                .ToListAsync(cancellationToken);
+        }
     }
 }
