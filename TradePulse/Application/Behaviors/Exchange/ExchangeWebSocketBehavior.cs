@@ -1,4 +1,5 @@
 ﻿using System.Net.WebSockets;
+using Application.Abstractions;
 using Application.Behaviors.Socket;
 using Domain.Exchange;
 using Microsoft.Extensions.Configuration;
@@ -10,10 +11,10 @@ namespace Application.Behaviors.Exchange
         private readonly ClientWebSocket ws = new();
         private readonly WebSocketBehavior webSocket;
 
-        public ExchangeWebSocketBehavior(IConfiguration configuration)
+        public ExchangeWebSocketBehavior(IConfiguration configuration, IWebSocketHandler webSocketHandler)
 		{
             webSocket = new(
-                handler: new WebSocketHandler(ws),
+                handler: webSocketHandler,
                 url: configuration["BYBIT_SOCKET_URL_PUBLIC_LINEAR"] ?? throw new Exception(),
                 receiveBufferSize: 1024 * 32);
         }

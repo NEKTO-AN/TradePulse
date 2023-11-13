@@ -54,5 +54,25 @@ namespace Application.Test.Services
 
             Assert.That(actual!.Value, Is.EqualTo(13));
         }
+
+        [Test]
+        public void CheckClearUntilFeatureTest()
+        {
+            PriceBinarySearchTree priceBinarySearchTree = new(TimeSpan.FromSeconds(5));
+
+            priceBinarySearchTree.Insert(11, 1);
+            priceBinarySearchTree.Insert(5, 2);
+            priceBinarySearchTree.Insert(13, 3);
+            priceBinarySearchTree.Insert(17, 4);
+
+            priceBinarySearchTree.ClearUntil(3);
+            Assert.Multiple(() =>
+            {
+                Assert.That(priceBinarySearchTree.SearchPrice(11), Is.EqualTo(null));
+                Assert.That(priceBinarySearchTree.SearchPrice(5), Is.EqualTo(null));
+                Assert.That(priceBinarySearchTree.SearchPrice(13), Is.EqualTo(null));
+                Assert.That(priceBinarySearchTree.SearchPrice(17)?.Value, Is.EqualTo(17));
+            });
+        }
     }
 }

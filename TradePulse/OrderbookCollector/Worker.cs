@@ -1,7 +1,9 @@
 ﻿using Application.Behaviors.Exchange;
 using Application.Helpers.Configuration;
 using Application.Helpers.Kafka;
+using Application.Services.Kafka;
 using Confluent.Kafka;
+using Confluent.Kafka.Admin;
 using Domain.Exchange.WebSocket;
 using Domain.Orderbook;
 
@@ -11,26 +13,19 @@ public class Worker : BackgroundService
 {
     private readonly string[] _orderbookTopics;
     private readonly ILogger<Worker> _logger;
-    private readonly string _topic;
-    private readonly IProducer<Null, OrderbookDataMessage> _producer;
+    private readonly KafkaProducerInstance<Null, OrderbookDataMessage> _producer;
     private readonly ExchangeWebSocketBehavior _exchangeWebSocketBehavior;
 
     private readonly Dictionary<string, double> _lastSymbolPrice;
 
-    public Worker(ILogger<Worker> logger, ExchangeWebSocketBehavior exchangeWebSocketBehavior, AppConfiguration configuration)
+    public Worker(ILogger<Worker> logger, ExchangeWebSocketBehavior exchangeWebSocketBehavior, KafkaAdmin kafkaAdmin, KafkaProducer kafkaProducer, AppConfiguration configuration)
     {
         _logger = logger;
-        _topic = configuration.KafkaOrderbookTopic;
         _orderbookTopics = configuration.ExchangeTopics;
         _exchangeWebSocketBehavior = exchangeWebSocketBehavior;
 
-        ProducerConfig config = new()
-        {
-            BootstrapServers = configuration.KafkaEndpoint
-        };
-
-        _producer = new ProducerBuilder<Null, OrderbookDataMessage>(config)
-            .SetValueSerializer(new MessageSerializer<OrderbookDataMessage>()).Build();
+        kafkaAdmin.CreateTopic(configuration.KafkaOrderbookTopic, 120000);  // 2 minutes
+        _producer = kafkaProducer.BuildInstance<Null, OrderbookDataMessage>(configuration.KafkaOrderbookTopic);
 
         _lastSymbolPrice = configuration.Symbols.ToDictionary(k => k, v => -1.0);
     }
@@ -53,18 +48,18 @@ public class Worker : BackgroundService
         }
 
         OrderbookDataMessage? orderbookDataMessage = Newtonsoft.Json.JsonConvert.DeserializeObject<OrderbookDataMessage>(value);
-        if (orderbookDataMessage?.Data == null 
-            || _lastSymbolPrice[orderbookDataMessage.Data.Symbol] == -1)
+        if (IsNotValidOrderbookDataMessage(orderbookDataMessage))
             return;
 
-        orderbookDataMessage.LastPrice = _lastSymbolPrice[orderbookDataMessage.Data.Symbol];
+        orderbookDataMessage!.LastPrice = _lastSymbolPrice[orderbookDataMessage.Data!.Symbol];
 
-        await _producer.ProduceAsync(_topic, new Message<Null, OrderbookDataMessage>
-        {
-            Value = orderbookDataMessage
-        });
+        await _producer.ProduceAsync(orderbookDataMessage);
 
         _logger.LogInformation(value);
     }
+
+    private bool IsNotValidOrderbookDataMessage(OrderbookDataMessage? orderbookDataMessage) 
+        => orderbookDataMessage?.Data == null || _lastSymbolPrice[orderbookDataMessage.Data.Symbol] == -1
+            || (orderbookDataMessage.Data.Bids.Length < 1 && orderbookDataMessage.Data.Asks.Length < 1);
 }
 

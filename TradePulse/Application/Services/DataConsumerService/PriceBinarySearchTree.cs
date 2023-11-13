@@ -23,6 +23,11 @@ namespace Application.Services.DataConsumerService
 
         public void Insert(double value, long timestamp)
         {
+            if (timeframe.Count > 0 && timeframe.Last().timestamp >= timestamp)
+            {
+                throw new Exception();
+            }
+
             _priceNode = InsertValue(_priceNode, value, timestamp);
             timeframe.Enqueue((price: value, timestamp: timestamp));
 
@@ -48,6 +53,25 @@ namespace Application.Services.DataConsumerService
         public PriceNode? SearchPrice(double price)
         {
             return (PriceNode?)Search(_priceNode, price);
+        }
+
+        public void ClearUntil(long toTs)
+        {
+            if (timeframe.First().timestamp > toTs)
+            {
+                return;
+            }
+
+            while (true)
+            {
+                (double price, long timestamp) = timeframe.Dequeue();
+                _priceNode = Remove(_priceNode, price, timestamp);
+
+                if (timestamp >= toTs)
+                {
+                    break;
+                }
+            }
         }
         
 
@@ -113,7 +137,6 @@ namespace Application.Services.DataConsumerService
             return Search(node.Left, value);
         }
 
-
         private PriceNode? Remove(PriceNode? node, double value, long updateTime)
         {
             if (node is null)
@@ -158,6 +181,8 @@ namespace Application.Services.DataConsumerService
                 }
             }
         }
+
+
 
 #region GET_VALUES
 

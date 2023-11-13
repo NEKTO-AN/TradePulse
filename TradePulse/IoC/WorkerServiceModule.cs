@@ -1,6 +1,10 @@
-﻿using Application.Behaviors.Exchange;
+﻿using System.Net.WebSockets;
+using Application.Abstractions;
+using Application.Behaviors.Exchange;
+using Application.Behaviors.Socket;
 using Application.Helpers.Configuration;
 using Application.Services.DataConsumerService;
+using Application.Services.Kafka;
 using Domain.Orderbook;
 using Domain.PumpDumpSnapshot;
 using Infrastructure;
@@ -18,8 +22,12 @@ namespace IoC
             services.AddSingleton<IOrderbookRepository, OrderbookRepository>();
             services.AddSingleton<IPumpDumpSnapshotRepository, PumpDumpSnapshotRepository>();
             services.AddSingleton<ExchangeWebSocketBehavior>();
+            services.AddSingleton<IWebSocketHandler, WebSocketHandler>((provider) => new WebSocketHandler(new ClientWebSocket()));
 
             services.AddSingleton<DataConsumerWorkerService>();
+            services.AddSingleton<KafkaAdmin>();
+            services.AddSingleton<KafkaProducer>();
+            services.AddSingleton<KafkaConsumer>();
 
             services.AddSingleton<AppConfiguration>((provider) => new(provider.GetService<IConfiguration>() ?? throw new Exception()));
 

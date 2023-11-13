@@ -13,9 +13,7 @@ namespace Infrastructure.Repositories
             _collection = dbContext.Database.GetCollection<PumpDumpSnapshot>(nameof(PumpDumpSnapshot));
 		}
 
-        public async Task AddAsync(PumpDumpSnapshot entity)
-        {
-            await _collection.InsertOneAsync(entity);
-        }
+        public Task AddAsync(PumpDumpSnapshot entity, CancellationToken cancellationToken = default) 
+            => _collection.InsertOneAsync(entity, null, cancellationToken);
     }
 }

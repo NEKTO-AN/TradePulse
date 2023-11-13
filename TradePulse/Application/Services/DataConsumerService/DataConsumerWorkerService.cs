@@ -6,8 +6,9 @@ namespace Application.Services.DataConsumerService
 {
     public class DataConsumerWorkerService
     {
+        private const float RANGE_PERCENT = .5f;    //
+        private readonly TimeSpan SYMBOL_PRICE_LIFETIME = TimeSpan.FromHours(1);
         private readonly Dictionary<string, PriceBinarySearchTree> symbolBST = new();
-        private readonly Dictionary<string, long> lastFundedAnomaly = new();    //anomaly is pump or dump
 
         private readonly IOrderbookRepository _orderbookRepository;
         private readonly IPumpDumpSnapshotRepository _pumpDumpSnapshotRepository;
@@ -16,48 +17,50 @@ namespace Application.Services.DataConsumerService
         {
             _orderbookRepository = orderbookRepository;
             _pumpDumpSnapshotRepository = pumpDumpSnapshotRepository;
-            foreach (string s in appConfiguration.Symbols)
-            {
-                symbolBST.Add(s, new(TimeSpan.FromHours(1)));
-                lastFundedAnomaly.Add(s, 0);
-            }
+            symbolBST = appConfiguration.Symbols.ToDictionary(k => k, v => new PriceBinarySearchTree(SYMBOL_PRICE_LIFETIME));
         }
 
-        public async Task AddOrderbookItemAsync(Domain.Orderbook.Orderbook orderbook, double lastPrice)
+        public Task AddOrderbookItemAsync(Domain.Orderbook.Orderbook orderbook, CancellationToken cancellationToken = default) 
+            => _orderbookRepository.AddAsync(orderbook, cancellationToken);
+
+        public async Task FindAnomalyAsync(string symbol, long timestamp, double lastPrice)
         {
-            await _orderbookRepository.AddAsync(orderbook);
-            
-            if (orderbook.Data.Bids.Length < 1 || orderbook.Data.Asks.Length < 1)
+            symbolBST[symbol].Insert(lastPrice, timestamp);
+
+            if (IsAnomalyFound(symbolBST[symbol]))
             {
                 return;
             }
 
-            PriceBinarySearchTree priceBinarySearchTree = symbolBST[orderbook.Symbol];
-            
-            symbolBST[orderbook.Symbol].Insert(lastPrice, orderbook.Timestamp);
-
-            if (lastFundedAnomaly[orderbook.Symbol] > orderbook.Timestamp - 3600_000
-                || (priceBinarySearchTree.MinPrice.LastUpdateTs < priceBinarySearchTree.MaxPrice.LastUpdateTs 
-                && CalculateRangePercent(priceBinarySearchTree.MinPrice.Value, priceBinarySearchTree.MaxPrice.Value) < 2)
-                || CalculateRangePercent(priceBinarySearchTree.MaxPrice.Value, priceBinarySearchTree.MinPrice.Value) < 2)
+            long startAnomalyTs;
+            long endAnomalyTs;
+            PumpAndDumpType pumpAndDumpType;
+            if (symbolBST[symbol].MaxPrice.LastUpdateTs > symbolBST[symbol].MinPrice.LastUpdateTs)
             {
-                return;
+                startAnomalyTs = symbolBST[symbol].MinPrice.LastUpdateTs;
+                endAnomalyTs = symbolBST[symbol].MaxPrice.LastUpdateTs;
+                pumpAndDumpType = PumpAndDumpType.Pump;
             }
-
-            PumpAndDumpType pumpAndDumpType = priceBinarySearchTree.MaxPrice.LastUpdateTs > priceBinarySearchTree.MinPrice.LastUpdateTs 
-                ? PumpAndDumpType.Pump 
-                : PumpAndDumpType.Dump;
+            else
+            {
+                startAnomalyTs = symbolBST[symbol].MaxPrice.LastUpdateTs;
+                endAnomalyTs = symbolBST[symbol].MinPrice.LastUpdateTs;
+                pumpAndDumpType = PumpAndDumpType.Dump;
+            }
 
             await _pumpDumpSnapshotRepository.AddAsync(PumpDumpSnapshot.Create(
                 type: pumpAndDumpType, 
-                price: new(priceBinarySearchTree.MaxPrice.Value, priceBinarySearchTree.MinPrice.Value), 
-                time: new(priceBinarySearchTree.MaxPrice.LastUpdateTs, priceBinarySearchTree.MaxPrice.LastUpdateTs)));
+                price: new(symbolBST[symbol].MaxPrice.Value, symbolBST[symbol].MinPrice.Value), 
+                time: new(endAnomalyTs, startAnomalyTs)));
 
-            lastFundedAnomaly[orderbook.Symbol] = priceBinarySearchTree.MaxPrice.LastUpdateTs > priceBinarySearchTree.MinPrice.LastUpdateTs 
-                ? priceBinarySearchTree.MaxPrice.LastUpdateTs 
-                : priceBinarySearchTree.MinPrice.LastUpdateTs;
+            symbolBST[symbol].ClearUntil(endAnomalyTs);
         }
 
         private static double CalculateRangePercent(double entryPrice, double exitPrice) => Math.Abs(entryPrice - exitPrice) / (entryPrice / 100);
+
+        private static bool IsAnomalyFound(PriceBinarySearchTree priceBinarySearchTree)
+            => (priceBinarySearchTree.MinPrice.LastUpdateTs < priceBinarySearchTree.MaxPrice.LastUpdateTs 
+                && CalculateRangePercent(priceBinarySearchTree.MinPrice.Value, priceBinarySearchTree.MaxPrice.Value) < RANGE_PERCENT)
+                || CalculateRangePercent(priceBinarySearchTree.MaxPrice.Value, priceBinarySearchTree.MinPrice.Value) < RANGE_PERCENT;
     }
 }
