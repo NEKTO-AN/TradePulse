@@ -7,6 +7,9 @@ namespace Domain.PumpDumpSnapshot
         [BsonElement("_id")]
         public Guid Id { get; set; }
 
+        [BsonElement("symbol")]
+        public string Symbol { get; set; }
+
         [BsonElement("type")]
         public PumpAndDumpType Type { get; set; }
 
@@ -16,17 +19,18 @@ namespace Domain.PumpDumpSnapshot
         [BsonElement("time")]
         public Data<long> Time { get; set; }
 
-        public PumpDumpSnapshot(Guid id, PumpAndDumpType type, Data<double> price, Data<long> time)
+        public PumpDumpSnapshot(Guid id, string symbol, PumpAndDumpType type, Data<double> price, Data<long> time)
         {
             Id = id;
+            Symbol = symbol;
             Type = type;
             Price = price;
             Time = time;
         }
 
-        public static PumpDumpSnapshot Create(PumpAndDumpType type, Data<double> price, Data<long> time)
+        public static PumpDumpSnapshot Create(string symbol, PumpAndDumpType type, Data<double> price, Data<long> time)
         {
-            return new(Guid.NewGuid(), type, price, time);
+            return new(Guid.NewGuid(), symbol, type, price, time);
         }
 
         public class Data<T>

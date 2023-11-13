@@ -48,8 +48,9 @@ namespace Application.Services.DataConsumerService
                 pumpAndDumpType = PumpAndDumpType.Dump;
             }
 
-            await _pumpDumpSnapshotRepository.AddAsync(PumpDumpSnapshot.Create(
-                type: pumpAndDumpType, 
+            await _pumpDumpSnapshotRepository.AddAsync(Domain.PumpDumpSnapshot.PumpDumpSnapshot.Create(
+                symbol: symbol,
+                type: pumpAndDumpType,
                 price: new(symbolBST[symbol].MaxPrice.Value, symbolBST[symbol].MinPrice.Value), 
                 time: new(endAnomalyTs, startAnomalyTs)));
 
