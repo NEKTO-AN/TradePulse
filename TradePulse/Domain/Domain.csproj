@@ -17,5 +17,6 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
+    <PackageReference Include="MongoDB.Bson" Version="2.22.0" />
   </ItemGroup>
 </Project>

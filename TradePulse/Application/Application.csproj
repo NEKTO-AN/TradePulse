@@ -13,6 +13,8 @@
     <None Remove="Services\" />
     <None Remove="Services\Kafka\" />
     <None Remove="Behaviors\Exchange\" />
+    <None Remove="Orderbook\" />
+    <None Remove="Orderbook\Read\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Behaviors\" />
@@ -21,6 +23,8 @@
     <Folder Include="Services\" />
     <Folder Include="Services\Kafka\" />
     <Folder Include="Behaviors\Exchange\" />
+    <Folder Include="Orderbook\" />
+    <Folder Include="Orderbook\Read\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Domain\Domain.csproj" />
@@ -28,5 +32,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Confluent.Kafka" Version="2.3.0" />
+    <PackageReference Include="MediatR" Version="12.1.1" />
+    <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="11.1.0" />
   </ItemGroup>
 </Project>
