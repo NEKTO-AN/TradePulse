@@ -32,8 +32,8 @@ public class Worker : BackgroundService
                 
             _logger.LogInformation("ConsumeMessageUntilCancel {0}", message);
 
-            await _dataConsumerWorkerService.AddOrderbookItemAsync(new Orderbook(message.Timestamp, message.Data));
-            await _dataConsumerWorkerService.FindAnomalyAsync(message.Data.Symbol, message.Timestamp, message.LastPrice);
+            await _dataConsumerWorkerService.AddOrderbookItemAsync(new AddOrderbookItemQuery(message));
+            _ = await _dataConsumerWorkerService.FindAnomalyAsync(new FindAnomalyQuery(message.Data.Symbol));
         }, stoppingToken);
     }
 

@@ -40,7 +40,7 @@ namespace Application.Services.DataConsumerService
                 {
                     if (value > MaxPrice.Value || MaxPrice.Value == -1)
                         isUpdateMaxPrice = true;
-                    else if (value < MinPrice.Value || MinPrice.Value == -1)
+                    if (value < MinPrice.Value || MinPrice.Value == -1)
                         isUpdateMinPrice = true;
                     
                     break;
@@ -87,6 +87,9 @@ namespace Application.Services.DataConsumerService
                     break;
                 }
             }
+
+            MinPrice = GetMinPrice(_priceNode) ?? new(-1, -1);
+            MaxPrice = GetMaxPrice(_priceNode) ?? new(-1, -1);
         }
         
 
