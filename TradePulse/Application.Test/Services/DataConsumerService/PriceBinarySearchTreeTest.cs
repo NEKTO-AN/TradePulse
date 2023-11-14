@@ -1,16 +1,11 @@
 using Application.Services.DataConsumerService;
 
-namespace Application.Test.Services
+namespace Application.Test.Services.DataConsumerService
 {
-    public class DataConsumerServiceTest
+    public class PriceBinarySearchTreeTest
     {
-        [SetUp]
-        public void Setup()
-        {
-        }
-
         [Test]
-        public void CheckInsertFeatureByCleaningOldPricesTest()
+        public void CheckInsertFeatureByCleaningOldPrices_Positive_Test()
         {
             PriceBinarySearchTree priceBinarySearchTree = new(TimeSpan.FromSeconds(5));
 
@@ -41,7 +36,7 @@ namespace Application.Test.Services
         }
 
         [Test]
-        public void CheckSearchFeatureTest()
+        public void CheckSearchFeature_Positive_Test()
         {
             PriceBinarySearchTree priceBinarySearchTree = new(TimeSpan.FromSeconds(5));
 
@@ -56,7 +51,7 @@ namespace Application.Test.Services
         }
 
         [Test]
-        public void CheckClearUntilFeatureTest()
+        public void CheckClearUntilFeature_Positive_Test()
         {
             PriceBinarySearchTree priceBinarySearchTree = new(TimeSpan.FromSeconds(5));
 
@@ -73,6 +68,25 @@ namespace Application.Test.Services
                 Assert.That(priceBinarySearchTree.SearchPrice(13), Is.EqualTo(null));
                 Assert.That(priceBinarySearchTree.SearchPrice(17)?.Value, Is.EqualTo(17));
             });
+        }
+
+        [Test]
+        public void InsertWrongTimeframeValue_Negative_Test()
+        {
+            PriceBinarySearchTree priceBinarySearchTree = new(TimeSpan.FromSeconds(5));
+
+            priceBinarySearchTree.Insert(11, 1);
+            priceBinarySearchTree.Insert(5, 2);
+            try
+            {
+                priceBinarySearchTree.Insert(13, 2);
+
+                Assert.Fail();
+            }
+            catch (Exception)
+            {
+                Assert.Pass();
+            }
         }
     }
 }
