@@ -18,7 +18,7 @@ namespace Application.Services.DataConsumerService
         public PriceBinarySearchTree(TimeSpan nodeLifetime)
         {
             _nodeLifetime = nodeLifetime;
-            MinPrice = MaxPrice = new(0, 0);
+            MinPrice = MaxPrice = new(-1, -1);
         }
 
         public void Insert(double value, long timestamp)
@@ -31,10 +31,18 @@ namespace Application.Services.DataConsumerService
             _priceNode = InsertValue(_priceNode, value, timestamp);
             timeframe.Enqueue((price: value, timestamp: timestamp));
 
+            bool isUpdateMinPrice = false;
+            bool isUpdateMaxPrice = false;
+
             while (true)
             {
                 if (timeframe.Last().timestamp - timeframe.First().timestamp <= _nodeLifetime.TotalMilliseconds)
                 {
+                    if (value > MaxPrice.Value || MaxPrice.Value == -1)
+                        isUpdateMaxPrice = true;
+                    else if (value < MinPrice.Value || MinPrice.Value == -1)
+                        isUpdateMinPrice = true;
+                    
                     break;
                 }
 
@@ -44,10 +52,17 @@ namespace Application.Services.DataConsumerService
                     continue;
 
                 _priceNode = newNode;
+
+                if (timeframeData.price == MinPrice.Value)
+                    isUpdateMinPrice = true;
+                else if (timeframeData.price == MaxPrice.Value)
+                    isUpdateMaxPrice = true;
             }
 
-            MinPrice = GetMinPrice(_priceNode) ?? MinPrice;
-            MaxPrice = GetMaxPrice(_priceNode) ?? MaxPrice;
+            if (isUpdateMinPrice)
+                MinPrice = GetMinPrice(_priceNode) ?? MinPrice;
+            if (isUpdateMaxPrice)
+                MaxPrice = GetMaxPrice(_priceNode) ?? MaxPrice;
         }
 
         public PriceNode? SearchPrice(double price)
